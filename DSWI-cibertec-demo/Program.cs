@@ -1,7 +1,11 @@
+using DSWI_cibertec_demo.Data;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Agregar servicios MVC
 builder.Services.AddControllersWithViews();
+
+// Registrar el repositorio ADO.NET
+builder.Services.AddScoped<ProductoRepository>();
 
 var app = builder.Build();
 

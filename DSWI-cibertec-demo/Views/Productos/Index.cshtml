@@ -1,0 +1,63 @@
+﻿@model IEnumerable<DSWI_cibertec_demo.Models.ProductoModel>
+@{
+    ViewData["Title"] = "Lista de productos";
+}
+
+<h2>Lista de productos</h2>
+<p>
+    <a class="btn btn-primary" asp-action="Create">+ Nuevo producto</a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Nombre</td>
+                    <td>@item.Precio.ToString("C")</td>
+                    <td>@item.Cantidad</td>
+                    <td>@(item.Estado ? "Activo" : "Inactivo")</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5">No hay productos registrados.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Paginación -->
+@if (ViewBag.TotalPaginas > 1)
+{
+    <nav>
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(ViewBag.PaginaActual == 1 ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)">Anterior</a>
+            </li>
+            @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+            {
+                <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-pagina="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(ViewBag.PaginaActual == ViewBag.TotalPaginas ? "disabled": "")">
+                <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
