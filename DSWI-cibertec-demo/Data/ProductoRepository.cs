@@ -16,33 +16,33 @@ namespace DSWI_cibertec_demo.Data
         }
 
         // Función para obtener Todos los Productos de golpe
-        //public async Task<List<ProductoModel>> ObtenerProductosAsync()
-        //{
-        //    var lista = new List<ProductoModel>();
-        //    var query = "SELECT Id, Nombre, Precio, Cantidad, Estado FROM Producto";
+        public async Task<List<ProductoModel>> ObtenerProductosAsync()
+        {
+            var lista = new List<ProductoModel>();
+            var query = "SELECT Id, Nombre, Precio, Cantidad, Estado FROM Producto";
 
-        //    using (var conn = new SqlConnection(_connectionString))
-        //    using (var cmd = new SqlCommand(query, conn))
-        //    {
-        //        await conn.OpenAsync();
+            using (var conn = new SqlConnection(_connectionString))
+            using (var cmd = new SqlCommand(query, conn))
+            {
+                await conn.OpenAsync();
 
-        //        using (var reader = await cmd.ExecuteReaderAsync())
-        //        {
-        //            while (await reader.ReadAsync())
-        //            {
-        //                lista.Add(new ProductoModel
-        //                {
-        //                    Id = reader.GetInt32(0),
-        //                    Nombre = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-        //                    Precio = reader.GetDecimal(2),
-        //                    Cantidad = reader.GetInt32(3),
-        //                    Estado = reader.GetBoolean(4)
-        //                });
-        //            }
-        //        }
-        //    }
-        //    return lista;
-        //}
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        lista.Add(new ProductoModel
+                        {
+                            Id = reader.GetInt32(0),
+                            Nombre = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                            Precio = reader.GetDecimal(2),
+                            Cantidad = reader.GetInt32(3),
+                            Estado = reader.GetBoolean(4)
+                        });
+                    }
+                }
+            }
+            return lista;
+        }
 
         public async Task<(List<ProductoModel> Productos, int TotalRegistros)> ObtenerProductosPaginadoAsync(int page, int pageSize)
         {
