@@ -1,7 +1,11 @@
 using DSWI_cibertec_demo.Data;
+using DSWI_cibertec_demo.Services;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configurar gRPC
+builder.Services.AddGrpc();
 
 // Agregar servicios MVC
 builder.Services.AddControllersWithViews();
@@ -31,6 +35,8 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.MapGrpcService<ProductoGrpcService>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

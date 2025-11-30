@@ -102,5 +102,68 @@ namespace DSWI_cibertec_demo.Data
                 await cmd.ExecuteNonQueryAsync();
             }
         }
+
+        public async Task<bool> ActualizarProductoAsync(ProductoModel p)
+        {
+            var sql = @"UPDATE Producto 
+                SET Nombre = @Nombre, Precio = @Precio, 
+                    Cantidad = @Cantidad, Estado = @Estado 
+                WHERE Id = @Id";
+
+            using (var conn = new SqlConnection(_connectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@Id", p.Id);
+                cmd.Parameters.AddWithValue("@Nombre", p.Nombre);
+                cmd.Parameters.AddWithValue("@Precio", p.Precio);
+                cmd.Parameters.AddWithValue("@Cantidad", p.Cantidad);
+                cmd.Parameters.AddWithValue("@Estado", p.Estado);
+
+                await conn.OpenAsync();
+                return await cmd.ExecuteNonQueryAsync() > 0;
+            }
+        }
+
+        public async Task<bool> EliminarProductoAsync(int id)
+        {
+            var sql = "DELETE FROM Producto WHERE Id = @Id";
+
+            using (var conn = new SqlConnection(_connectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@Id", id);
+
+                await conn.OpenAsync();
+                return await cmd.ExecuteNonQueryAsync() > 0;
+            }
+        }
+
+        public async Task<ProductoModel> ObtenerProductoPorIdAsync(int id)
+        {
+            var sql = "SELECT Id, Nombre, Precio, Cantidad, Estado FROM Producto WHERE Id = @Id";
+
+            using (var conn = new SqlConnection(_connectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@Id", id);
+
+                await conn.OpenAsync();
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return new ProductoModel
+                        {
+                            Id = reader.GetInt32(0),
+                            Nombre = reader.GetString(1),
+                            Precio = reader.GetDecimal(2),
+                            Cantidad = reader.GetInt32(3),
+                            Estado = reader.GetBoolean(4)
+                        };
+                    }
+                }
+            }
+            return null;
+        }
     }
 }

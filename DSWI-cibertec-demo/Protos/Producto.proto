@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option csharp_namespace = "DSWI_cibertec_demo.Grpc";
+
+service ProductoService {
+  rpc ObtenerProducto (ProductoRequest) returns (ProductoResponse);
+  rpc CrearProducto (ProductoCrearRequest) returns (ProductoResponse);
+  rpc ActualizarProducto (ProductoActualizarRequest) returns (ProductoResponse);
+  rpc EliminarProducto (ProductoRequest) returns (EliminarResponse);
+  rpc ListarProductos (ListarRequest) returns (ListarProductosResponse);
+}
+
+message ProductoRequest {
+  int32 id = 1;
+}
+
+message ProductoCrearRequest {
+  string nombre = 1;
+  double precio = 2;
+  int32 cantidad = 3;
+  bool estado = 4;
+}
+
+message ProductoActualizarRequest {
+  int32 id = 1;
+  string nombre = 2;
+  double precio = 3;
+  int32 cantidad = 4;
+  bool estado = 5;
+}
+
+message ProductoResponse {
+  int32 id = 1;
+  string nombre = 2;
+  double precio = 3;
+  int32 cantidad = 4;
+  bool estado = 5;
+  string mensaje = 6;
+}
+
+message EliminarResponse {
+  bool success = 1;
+  string mensaje = 2;
+}
+
+message ListarRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListarProductosResponse {
+  repeated ProductoResponse productos = 1;
+  int32 total_registros = 2;
+  int32 pagina_actual = 3;
+  int32 total_paginas = 4;
+}
