@@ -1,4 +1,5 @@
 using DSWI_cibertec_demo.Data;
+using DSWI_cibertec_demo.Hubs;
 using DSWI_cibertec_demo.Services;
 using Microsoft.OpenApi;
 
@@ -12,6 +13,9 @@ builder.Services.AddControllersWithViews();
 
 // Registrar el repositorio ADO.NET
 builder.Services.AddScoped<ProductoRepository>();
+
+// Registrar SignalR
+builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
@@ -62,6 +66,9 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Mapear endpoint del Hub
+app.MapHub<ChatHub>("/chathub");
 
 app.MapControllerRoute(
     name: "default",

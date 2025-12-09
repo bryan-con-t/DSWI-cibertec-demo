@@ -1,0 +1,160 @@
+﻿@{
+    Layout = "_ChatLayout";
+    ViewData["Title"] = "Chat en tiempo real";
+}
+<div class="layout">
+    <aside class="sidebar">
+        <h5 class="text-center">Usuarios conectados</h5>
+        <ul id="listaUsuarios" class="usuarios-list"></ul>
+    </aside>
+    <div class="main-panel">
+        <div class="top-panel">
+            <h2 class="text-center m-0">SignalR Chat</h2>
+            <div class="input-group mt-3">
+                <span class="input-group-text">Usuario:</span>
+                <input id="userInput" class="form-control" placeholder="Escribe tu nombre..." />
+                <button id="conectar" class="btn btn-success">Conectar</button>
+            </div>
+            <div id="idConexion" class="mt-2"></div>
+        </div>
+        <div class="content-panel">
+            <div class="messages-box" id="listaMensajes"></div>
+        </div>
+        <div class="bottom-panel">
+            <div class="input-group">
+                <input id="mensaje" class="form-control" placeholder="Escribe un mensaje..." />
+                <button id="enviar" class="btn btn-primary">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    /**
+     * Script para envío de mensajes uno a todos
+     */
+    let conexion;
+    const btnConectar = document.getElementById('conectar');
+    const btnEnviar = document.getElementById('enviar');
+    const inputUsuario = document.getElementById('userInput');
+    const inputMensaje = document.getElementById('mensaje');
+    const listaMensajes = document.getElementById('listaMensajes');
+    const idConexionDiv = document.getElementById('idConexion');
+
+    function agregarMensaje(usuario, mensaje, esMio) {
+        const div = document.createElement('div');
+        div.classList.add("message-bubble");
+        if (esMio) {
+            div.classList.add("me");
+        }
+        div.innerHTML = `<strong>${usuario}:</strong> ${mensaje}`;
+        listaMensajes.appendChild(div);
+        setTimeout(() => {
+            const contentPanel = document.querySelector('.content-panel');
+            if (contentPanel) {
+                contentPanel.scrollTop = contentPanel.scrollHeight;
+            } else {
+                listaMensajes.scrollTop = listaMensajes.scrollHeight;
+            }
+        }, 50);
+    }
+
+    async function enviarMensaje() {
+        const usuario = inputUsuario.value || 'Anónimo';
+        const mensaje = inputMensaje.value.trim();
+        if (!mensaje) {
+            alert("No puedes enviar un mensaje vacío");
+            inputMensaje.focus();
+            return;
+        }
+        if (!conexion || conexion.state !== signalR.HubConnectionState.Connected) {
+            alert("Primero conéctate al chat");
+            btnConectar.focus();
+            return;
+        }
+        try {
+            await conexion.invoke('EnviarMensaje', usuario, mensaje);
+            inputMensaje.value = "";
+            inputMensaje.focus();
+        } catch (err) {
+            console.error(err);
+            alert("Error al enviar mensaje: " + err.message);
+        }
+    }
+
+    btnConectar.addEventListener('click', async () => {
+        if (conexion && conexion.state === signalR.HubConnectionState.Connected) {
+            alert("Ya estás conectado");
+            return;
+        }
+        const usuario = inputUsuario.value || 'Anónimo';
+        conexion = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub?user=" + encodeURIComponent(usuario))
+            .withAutomaticReconnect()
+            .build();
+        conexion.on('RecibirMensaje', (usuario, mensaje) => {
+            const esMio = usuario === inputUsuario.value;
+            agregarMensaje(usuario, mensaje, esMio);
+        });
+        conexion.on('RecibirMensajePrivado', (usuario, mensaje) => {
+            const esMio = usuario === inputUsuario.value;
+            agregarMensaje(`(Privado) ${usuario}`, mensaje, esMio);
+        });
+        conexion.on('Conectado', (idConexion, nombre, usuarios) => {
+            idConexionDiv.textContent = `Conectado como ${nombre} (ID: ${idConexion})`;
+            inputMensaje.focus();
+        });
+        conexion.on('UsuariosConectados', (usuarios) => {
+            renderUsuarios(usuarios);
+            console.log("Usuarios conectados: ", usuarios);
+        });
+
+        try {
+            await conexion.start();
+            console.log("Conectado a SignalR");
+        } catch (err) {
+            console.error(err);
+            alert("Error al conectar: " + err.message);
+        }
+    });
+
+    btnEnviar.addEventListener('click', enviarMensaje);
+
+    inputMensaje.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            enviarMensaje();
+        }
+    });
+
+    inputUsuario.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            btnConectar.click();
+        }
+    });
+
+    /**
+     * Funciones para listado de usuarios
+     */
+    const listaUsuarios = document.getElementById('listaUsuarios');
+
+    function renderUsuarios(usuarios) {
+        listaUsuarios.innerHTML = '';
+        usuarios.forEach(u => {
+            const li = document.createElement('li');
+            li.textContent = u.nombre;
+            li.dataset.id = u.connectionId;
+            if (u.nombre === inputUsuario.value) {
+                li.classList.add("me");
+            }
+            li.addEventListener('click', () => {
+                const mensaje = prompt(`Mensaje privado para ${u.nombre}:`);
+                if (mensaje) {
+                    conexion.invoke("EnviarMensajePrivado", u.connectionId, inputUsuario.value, mensaje);
+                }
+            });
+            listaUsuarios.appendChild(li);
+        });
+    }
+</script>
