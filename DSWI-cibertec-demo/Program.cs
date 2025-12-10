@@ -13,6 +13,7 @@ builder.Services.AddControllersWithViews();
 
 // Registrar el repositorio ADO.NET
 builder.Services.AddScoped<ProductoRepository>();
+builder.Services.AddScoped<MensajeRepository>();
 
 // Registrar SignalR
 builder.Services.AddSignalR();

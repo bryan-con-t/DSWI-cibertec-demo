@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using DSWI_cibertec_demo.Data;
+using DSWI_cibertec_demo.Models;
+using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
 namespace DSWI_cibertec_demo.Hubs
@@ -7,26 +9,49 @@ namespace DSWI_cibertec_demo.Hubs
     {
         // Mantener lista sencilla de usuarios conectados
         private static readonly ConcurrentDictionary<string, string> _usuarios = new();
+        private readonly MensajeRepository _mensajeRepo;
+
+        public ChatHub(MensajeRepository mensajeRepo)
+        {
+            _mensajeRepo = mensajeRepo;
+        }
 
         // Método que llamarán los clientes para enviar mensaje a todos
         public async Task EnviarMensaje(string usuario, string mensaje)
         {
-            await Clients.All.SendAsync("RecibirMensaje", usuario, mensaje);
+            var mensajeModel = new MensajeModel
+            {
+                Usuario = usuario,
+                Mensaje = mensaje
+            };
+            var guardado = await _mensajeRepo.InsertarMensajeAsync(mensajeModel);
+            await Clients.All.SendAsync("RecibirMensaje", guardado.Usuario, guardado.Mensaje, guardado.FechaCreacion);
         }
 
         // Mensaje privado a un ConnectionId concreto
         public async Task EnviarMensajePrivado(string connectionId, string remitente, string mensaje)
         {
-            await Clients.Client(connectionId).SendAsync("RecibirMensajePrivado", remitente, mensaje);
+            var mensajeModel = new MensajeModel
+            {
+                Usuario = remitente,
+                Mensaje = mensaje
+            };
+            var guardado = await _mensajeRepo.InsertarMensajeAsync(mensajeModel);
+            await Clients.Client(connectionId).SendAsync("RecibirMensajePrivado", guardado.Usuario, guardado.Mensaje, guardado.FechaCreacion);
         }
 
         // Manejar conexión y desconexión para mantener lista de usuarios
         public override async Task OnConnectedAsync()
         {
             var httpContext = Context.GetHttpContext();
-            var user = httpContext.Request.Query["user"].ToString() ?? "Anónimo";
+            var user = httpContext.Request.Query["user"].ToString();
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                user = "Anónimo";
+            }
             _usuarios[Context.ConnectionId] = user;
-            await Clients.Caller.SendAsync("Conectado", Context.ConnectionId, user, _usuarios.Select(u => new {connectionId = u.Key, nombre = u.Value}).ToList());
+            var historial = await _mensajeRepo.ObtenerUltimosMensajesAsync(50);
+            await Clients.Caller.SendAsync("Conectado", Context.ConnectionId, user, historial);
             await Clients.All.SendAsync("UsuariosConectados", _usuarios.Select(u => new { connectionId = u.Key, nombre = u.Value }).ToList());
             await base.OnConnectedAsync();
         }
